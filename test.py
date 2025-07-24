@@ -1,5 +1,6 @@
 from PIL import Image
 import numpy as np
+from scipy.spatial import cKDTree
 
 def pixelate_image(input_image_path, output_image_path, size, rounder=50):
     # 이미지 열기
@@ -31,6 +32,8 @@ def pixelate_image(input_image_path, output_image_path, size, rounder=50):
                 quantized[3]=255
                 pixelated_img_np[y//grid_size, x//grid_size] = quantized
 
+    pixelated_img_np=palette_painter(pixelated_img_np,"palette.png")
+
     pixelated_img = Image.fromarray(pixelated_img_np)
     pixelated_img.save(output_image_path)
 
@@ -54,11 +57,25 @@ def load_palette(inputPath):
 
     palette=palette.reshape(y*x,4)
 
-    filtered = np.unique(palette,axis=0)
 
+    filtered = np.unique(palette,axis=0)
     return filtered
 
+def palette_painter(pixelated_img_np, palette_path):
+    palette = load_palette(palette_path)
+
+
+    flatImage = pixelated_img_np.reshape(-1,4)
+
+    tree = cKDTree(palette)
+    _, idx = tree.query(flatImage)
+
+    recoloredFlat = palette[idx]
+
+    recoloredImage = recoloredFlat.reshape(pixelated_img_np.shape).astype(np.uint8)
+
+    return recoloredImage
+
+
 # 사용 예시
-pixelate_image("input.png", "first_output.png", size=128,rounder=10)
-pixelate_image("first_output.png", "second_output.png",size=64,rounder=20)
-pixelate_image("input.png", "third_output.png", size=64,rounder=10)
+pixelate_image("input.png", "first_output.png", size=4,rounder=100)
