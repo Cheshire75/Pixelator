@@ -1,8 +1,9 @@
 from PIL import Image
 import numpy as np
 from scipy.spatial import cKDTree
+import os
 
-def pixelate_image(input_image_path, output_image_path, size, rounder=50):
+def pixelate_image(input_image_path, output_image_path, palette_path, size):
     # 이미지 열기
     img_np = image_preprocesser(input_image_path,size)
     
@@ -28,11 +29,10 @@ def pixelate_image(input_image_path, output_image_path, size, rounder=50):
                 pixelated_img_np[y//grid_size, x//grid_size] = [0,0,0,0]
             else:
                 avg_color = filtered.mean(axis=(0,1), dtype=int)
-                quantized = rounder*np.round(avg_color//rounder).astype(int)
-                quantized[3]=255
-                pixelated_img_np[y//grid_size, x//grid_size] = quantized
+                avg_color[3]=255
+                pixelated_img_np[y//grid_size, x//grid_size] = avg_color
 
-    pixelated_img_np=palette_painter(pixelated_img_np,"palette.png")
+    pixelated_img_np=palette_painter(pixelated_img_np,palette_path)
 
     pixelated_img = Image.fromarray(pixelated_img_np)
     pixelated_img.save(output_image_path)
@@ -77,5 +77,15 @@ def palette_painter(pixelated_img_np, palette_path):
     return recoloredImage
 
 
-# 사용 예시
-pixelate_image("input.png", "first_output.png", size=4,rounder=100)
+inputFolder = 'input'
+outputFolder = 'output'
+
+if not os.path.exists(outputFolder):
+    os.makedirs(outputFolder)
+
+for filename in os.listdir(inputFolder):
+    if filename.lower().endswith('.png'):
+        inputPath = os.path.join(inputFolder,filename)
+        outputPath = os.path.join(outputFolder,filename)
+
+        pixelate_image(inputPath,outputPath,'palette.png',64)
