@@ -3,7 +3,7 @@ import numpy as np
 from scipy.spatial import cKDTree
 import os
 
-def pixelate_image(input_image_path, output_image_path, palette_path, size):
+def pixelate_image(input_image_path, palette_path, size):
     # 이미지 열기
     img_np = image_preprocesser(input_image_path,size)
     
@@ -33,9 +33,7 @@ def pixelate_image(input_image_path, output_image_path, palette_path, size):
                 pixelated_img_np[y//grid_size, x//grid_size] = avg_color
 
     pixelated_img_np=palette_painter(pixelated_img_np,palette_path)
-
-    pixelated_img = Image.fromarray(pixelated_img_np)
-    pixelated_img.save(output_image_path)
+    return Image.fromarray(pixelated_img_np)
 
 def image_preprocesser(input_image_path, grid_size):
     img = Image.open(input_image_path)
@@ -76,16 +74,26 @@ def palette_painter(pixelated_img_np, palette_path):
 
     return recoloredImage
 
+def open_images():
+    filePath = 'input'
+    images=[]
+    files = os.listdir(filePath)
+    for file in files:
+        if not file.lower().endswith('.png'):
+            continue
+        fullPath = os.path.join(filePath,file)
+        images.append(fullPath)
+    return images
 
-inputFolder = 'input'
-outputFolder = 'output'
+def BatchPixelate(fileDirList):
+    outputFolder = 'output'
 
-if not os.path.exists(outputFolder):
-    os.makedirs(outputFolder)
+    if not os.path.exists(outputFolder):
+        os.makedirs(outputFolder)
 
-for filename in os.listdir(inputFolder):
-    if filename.lower().endswith('.png'):
-        inputPath = os.path.join(inputFolder,filename)
-        outputPath = os.path.join(outputFolder,filename)
+    for file in fileDirList:
+        outputPath = os.path.join(outputFolder,os.path.basename(file))
+        pixelatedImage = pixelate_image(file,'palette.png',64)
+        pixelatedImage.save(outputPath)
 
-        pixelate_image(inputPath,outputPath,'palette.png',64)
+BatchPixelate(open_images())
